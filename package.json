@@ -1,0 +1,34 @@
+{
+  "name": "@royalbit/ref-tools",
+  "version": "1.0.0",
+  "description": "Reference verification tools - headless Chrome link checker and data extractor",
+  "type": "module",
+  "bin": {
+    "ref-tools": "./bin/cli.js",
+    "check-links": "./bin/check-links.js",
+    "refresh-data": "./bin/refresh-data.js"
+  },
+  "scripts": {
+    "check": "node bin/check-links.js",
+    "refresh": "node bin/refresh-data.js"
+  },
+  "keywords": [
+    "link-checker",
+    "headless-chrome",
+    "puppeteer",
+    "markdown",
+    "references"
+  ],
+  "author": "RoyalBit",
+  "license": "MIT",
+  "dependencies": {
+    "puppeteer": "^24.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@crypto1.ca:pimp/tools.git"
+  }
+}

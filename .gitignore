@@ -1,0 +1,13 @@
+# Dependencies
+node_modules/
+
+# Output files
+*.log
+
+# OS files
+.DS_Store
+
+# Test output
+*.json
+!package.json
+!package-lock.json

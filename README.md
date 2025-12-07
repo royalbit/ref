@@ -21,6 +21,10 @@ Check URL health in a markdown file:
 ```bash
 ref-tools check-links ./REFERENCES.md
 ref-tools check-links --url https://capterra.com/p/173654/GRIN/pricing/
+
+# Parallel processing (default: 5, max: 20)
+ref-tools check-links ./REFERENCES.md -c 10
+ref-tools check-links ./REFERENCES.md --concurrency 15
 ```
 
 ### Refresh Data

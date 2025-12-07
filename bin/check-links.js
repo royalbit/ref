@@ -5,9 +5,13 @@
  * Uses Puppeteer to check URLs with a real browser, bypassing bot protection.
  *
  * Usage:
- *   node check-links.js [file.md]     # Check URLs in a markdown file
- *   node check-links.js --url URL     # Check a single URL
- *   node check-links.js --stdin       # Read URLs from stdin (one per line)
+ *   check-links <file.md>              Check URLs in a markdown file
+ *   check-links --url <URL>            Check a single URL
+ *   check-links --stdin                Read URLs from stdin (one per line)
+ *   check-links <file.md> -c 10        Run with 10 parallel browser tabs
+ *
+ * Options:
+ *   -c, --concurrency <N>   Number of parallel browser tabs (default: 5)
  *
  * Output:
  *   JSON report to stdout with status for each URL
@@ -163,27 +167,57 @@ function generateReport(results) {
   };
 }
 
+// Parse CLI argument
+function getArg(args, ...flags) {
+  for (const flag of flags) {
+    const idx = args.indexOf(flag);
+    if (idx !== -1 && args[idx + 1]) {
+      return args[idx + 1];
+    }
+  }
+  return null;
+}
+
 // Main
 async function main() {
   const args = process.argv.slice(2);
   let urls = [];
 
-  // Parse arguments
+  // Parse concurrency option
+  const concurrencyArg = getArg(args, '-c', '--concurrency');
+  if (concurrencyArg) {
+    const n = parseInt(concurrencyArg, 10);
+    if (n > 0 && n <= 20) {
+      CONFIG.concurrency = n;
+    } else {
+      console.error('Concurrency must be between 1 and 20');
+      process.exit(1);
+    }
+  }
+
+  // Parse input source
   if (args.includes('--url')) {
     const idx = args.indexOf('--url');
     urls = [args[idx + 1]];
   } else if (args.includes('--stdin')) {
     const input = fs.readFileSync(0, 'utf-8');
     urls = input.split('\n').filter(u => u.trim().startsWith('http'));
-  } else if (args.length > 0 && fs.existsSync(args[0])) {
-    const content = fs.readFileSync(args[0], 'utf-8');
-    urls = extractUrls(content);
   } else {
-    console.error('Usage:');
-    console.error('  node check-links.js <file.md>      Check URLs in markdown file');
-    console.error('  node check-links.js --url <URL>    Check single URL');
-    console.error('  node check-links.js --stdin        Read URLs from stdin');
-    process.exit(1);
+    // Find first non-flag argument as file path
+    const file = args.find(a => !a.startsWith('-') && a !== concurrencyArg);
+    if (file && fs.existsSync(file)) {
+      const content = fs.readFileSync(file, 'utf-8');
+      urls = extractUrls(content);
+    } else {
+      console.error('Usage:');
+      console.error('  check-links <file.md>              Check URLs in markdown file');
+      console.error('  check-links --url <URL>            Check single URL');
+      console.error('  check-links --stdin                Read URLs from stdin');
+      console.error('');
+      console.error('Options:');
+      console.error('  -c, --concurrency <N>   Parallel browser tabs (default: 5, max: 20)');
+      process.exit(1);
+    }
   }
 
   if (urls.length === 0) {
@@ -191,7 +225,7 @@ async function main() {
     process.exit(1);
   }
 
-  process.stderr.write(`Found ${urls.length} URLs to check\n\n`);
+  process.stderr.write(`Found ${urls.length} URLs to check (concurrency: ${CONFIG.concurrency})\n\n`);
 
   // Launch browser
   const browser = await puppeteer.launch({

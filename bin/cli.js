@@ -29,17 +29,20 @@ if (!command || command === '--help' || command === '-h') {
 Usage:
   ref-tools check-links <file.md>           Check URL health in markdown
   ref-tools check-links --url <URL>         Check single URL
+  ref-tools check-links <file.md> -c 10     Run with 10 parallel tabs
   ref-tools refresh-data                    Extract data from URLs
   ref-tools refresh-data --url <URL>        Extract from single URL
 
 Examples:
   ref-tools check-links ./REFERENCES.md
+  ref-tools check-links ./REFERENCES.md --concurrency 15
   ref-tools check-links --url https://capterra.com/...
   ref-tools refresh-data --url https://statista.com/...
 
 Options:
-  --help, -h    Show this help message
-  --version     Show version
+  -c, --concurrency <N>   Parallel browser tabs (default: 5, max: 20)
+  --help, -h              Show this help message
+  --version               Show version
 `);
   process.exit(0);
 }

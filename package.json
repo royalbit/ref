@@ -1,6 +1,6 @@
 {
   "name": "@royalbit/ref-tools",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Reference verification tools - headless Chrome link checker and data extractor",
   "type": "module",
   "bin": {

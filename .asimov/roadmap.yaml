@@ -1,0 +1,73 @@
+# RoyalBit Asimov Roadmap
+#
+# WHAT to build - milestones only
+#
+# Migration: Node.js/Puppeteer → Rust/chromiumoxide
+# Goal: Single static binary, no node_modules, UPX compressed
+#
+# See: docs/PROTOCOL_GOALS.md for core values
+# See: CHANGELOG.md for release history
+# See: docs/adr/ for detailed rationale
+
+current:
+  version: "0.1.0"
+  status: planned
+  summary: "Rust project scaffold"
+  goal: "FOUNDATION"
+  deliverables:
+    - "[ ] Cargo.toml with dependencies (clap, chromiumoxide, tokio, serde)"
+    - "[ ] Makefile (build-static, build-compressed, cross-compile)"
+    - "[ ] src/main.rs with CLI skeleton (clap derive)"
+    - "[ ] src/lib.rs with module structure"
+    - "[ ] .cargo/config.toml for musl target"
+    - "[ ] cargo build --release compiles"
+
+next:
+  - version: "0.2.0"
+    summary: "check-links command"
+    goal: "PARITY"
+    deliverables:
+      - "[ ] URL extraction from markdown files"
+      - "[ ] Headless Chrome via chromiumoxide"
+      - "[ ] Concurrent tab pool (--concurrency flag)"
+      - "[ ] JSON output to stdout, progress to stderr"
+      - "[ ] --url single URL mode"
+      - "[ ] --stdin pipe mode"
+      - "[ ] Resource blocking (images, fonts, media)"
+      - "[ ] Retry logic on failure"
+
+  - version: "0.3.0"
+    summary: "refresh-data command"
+    goal: "PARITY"
+    deliverables:
+      - "[ ] Site-specific extractors (Instagram, Statista, generic)"
+      - "[ ] Dollar amount extraction regex"
+      - "[ ] Percentage extraction regex"
+      - "[ ] JSON output with extracted data"
+      - "[ ] Rate limiting between requests"
+
+  - version: "0.4.0"
+    summary: "E2E test suite"
+    goal: "QUALITY"
+    deliverables:
+      - "[ ] test-data/ with sample markdown files"
+      - "[ ] E2E tests using assert_cmd + predicates"
+      - "[ ] Mock HTTP server for deterministic tests"
+      - "[ ] make test-e2e target"
+      - "[ ] 100% test coverage (ADR-004 compliant)"
+
+  - version: "0.5.0"
+    summary: "Production release"
+    goal: "SHIP"
+    deliverables:
+      - "[ ] make build-compressed produces <3MB binary"
+      - "[ ] Cross-compile Linux x86_64 + aarch64"
+      - "[ ] README.md updated for Rust version"
+      - "[ ] Node.js version archived in legacy/ branch"
+
+backlog:
+  - "MCP server mode (like forge-mcp)"
+  - "Watch mode for continuous checking"
+  - "HTML report output (--format html)"
+  - "Proxy support (--proxy)"
+  - "Cookie/auth support for paywalled sites"

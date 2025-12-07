@@ -1,4 +1,4 @@
-# @royalbit/ref-tools
+# ref-tools
 
 Reference verification tools with headless Chrome.
 Bypasses bot protection (403/999) that blocks curl/wget.
@@ -6,14 +6,12 @@ Bypasses bot protection (403/999) that blocks curl/wget.
 ## Installation
 
 ```bash
-# From source (recommended for development)
-git clone crypto1.ca:pimp/tools ~/src/pimp/tools
-cd ~/src/pimp/tools
-npm install
-npm link
+# Build from source
+git clone <repo> && cd tools
+make build
 
-# Verify installation
-ref-tools --version
+# Install to ~/.local/bin
+make install
 ```
 
 ## Commands
@@ -33,6 +31,8 @@ ref-tools check-links --stdin             # Read URLs from stdin
 | Flag | Description |
 |------|-------------|
 | `-c, --concurrency <N>` | Parallel browser tabs (1-20, default: 5) |
+| `--timeout <MS>` | Timeout per URL in milliseconds (default: 15000) |
+| `--retries <N>` | Number of retries on failure (default: 1) |
 
 **Examples:**
 
@@ -44,13 +44,10 @@ ref-tools check-links REFERENCES.md
 ref-tools check-links REFERENCES.md -c 15
 
 # Check single URL
-ref-tools check-links --url https://capterra.com/p/173654/GRIN/pricing/
+ref-tools check-links --url https://example.com
 
 # Pipe URLs from file
 cat urls.txt | ref-tools check-links --stdin
-
-# Save JSON report
-ref-tools check-links REFERENCES.md > report.json
 ```
 
 ### refresh-data
@@ -59,7 +56,8 @@ Extract live data from URLs (market sizes, pricing, statistics).
 
 ```bash
 ref-tools refresh-data --url <URL>        # Extract from single URL
-ref-tools refresh-data                    # Process REFERENCES.md (TODO)
+ref-tools refresh-data <file.md>          # Process URLs in file
+ref-tools refresh-data <file.md> --filter instagram
 ```
 
 **Examples:**
@@ -68,8 +66,8 @@ ref-tools refresh-data                    # Process REFERENCES.md (TODO)
 # Extract market data from Statista
 ref-tools refresh-data --url "https://www.statista.com/statistics/..."
 
-# Extract pricing from Capterra
-ref-tools refresh-data --url "https://www.capterra.com/p/173654/GRIN/pricing/"
+# Extract only Instagram data from references
+ref-tools refresh-data REFERENCES.md --filter instagram
 ```
 
 ## Output Format
@@ -111,75 +109,68 @@ Both commands output JSON to stdout, progress to stderr.
 
 ```json
 {
-  "url": "https://statista.com/...",
-  "title": "Market Size Report",
-  "extracted": {
-    "amounts": ["$33 billion", "$48.2M"],
-    "percentages": ["71%", "53%"]
-  },
+  "results": [
+    {
+      "url": "https://statista.com/...",
+      "type": "statista",
+      "success": true,
+      "title": "Market Size Report",
+      "amounts": [{"value": "33", "unit": "billion", "raw": "$33 billion"}],
+      "percentages": ["71%", "53%"]
+    }
+  ],
   "timestamp": "2025-12-07T..."
 }
 ```
 
-## Supported Extractions
+## Supported Extractors
 
 | Source | Data Extracted |
 |--------|----------------|
-| **Statista** | Market size numbers ($XX billion) |
-| **Capterra/G2** | Pricing info, reviews |
-| **Generic** | Title, dollar amounts, percentages |
+| **Statista** | Market size numbers, percentages |
+| **Instagram** | Follower counts |
+| **Generic** | Title, description, dollar amounts, percentages |
 
-## Limitations
+## Requirements
 
-| Site | Issue | Workaround |
-|------|-------|------------|
-| Instagram | Requires login for follower counts | Manual verification |
-| LinkedIn | Heavy bot protection | Manual verification |
-| G2.com | Cloudflare challenge | Usually passes, retry if blocked |
-| Paywalled | Only free content accessible | N/A |
-
-## Why Headless Chrome?
-
-Many sites block simple HTTP requests:
-
-| Method | Capterra | G2 | PitchBook |
-|--------|----------|-----|-----------|
-| curl/wget | 403 | 403 | 403 |
-| Headless Chrome | 200 | 200* | 200 |
-
-*G2 occasionally triggers Cloudflare challenges.
-
-Puppeteer with a real Chrome browser and proper user-agent bypasses most bot protection.
+- Chrome or Chromium installed (for headless browsing)
+- Rust toolchain (for building from source)
 
 ## Development
 
 ```bash
-# Run locally without npm link
-node bin/cli.js check-links ./test.md
+# Build
+make build
 
-# Run specific command directly
-node bin/check-links.js ./test.md -c 10
+# Run tests
+make test
 
-# Debug mode (shows browser)
-# Edit bin/check-links.js: CONFIG.headless = false
+# Run with pedantic lints
+make lint
+
+# Format code
+make format
 ```
 
 ## Project Structure
 
 ```
-pimp/tools/
-├── bin/
-│   ├── cli.js           # Main CLI entry point
-│   ├── check-links.js   # Link health checker
-│   └── refresh-data.js  # Data extractor
-├── package.json
+ref-tools/
+├── src/
+│   ├── main.rs          # CLI entry point
+│   ├── lib.rs           # Library root
+│   ├── browser.rs       # Headless Chrome via chromiumoxide
+│   ├── check_links.rs   # check-links command
+│   ├── extract.rs       # URL/data extraction utilities
+│   └── refresh_data.rs  # refresh-data command
+├── tests/
+│   └── cli_tests.rs     # E2E tests
+├── test-data/
+│   └── sample.md        # Test fixtures
+├── Cargo.toml
+├── Makefile
 └── README.md
 ```
-
-## Related
-
-- `pimp/business` - Business docs using these tools
-- `pimp/arch` - Technical architecture
 
 ## License
 

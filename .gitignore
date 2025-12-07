@@ -1,13 +1,18 @@
-# Dependencies
-node_modules/
-
-# Output files
-*.log
+# Rust build artifacts
+/target/
+/dist/
+Cargo.lock
 
 # OS files
 .DS_Store
 
-# Test output
-*.json
-!package.json
-!package-lock.json
+# Editor
+.idea/
+*.swp
+*.swo
+
+# Test/debug output
+*.log
+
+# Claude checkpoints
+.claude_checkpoint.yaml

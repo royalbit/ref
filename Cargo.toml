@@ -1,0 +1,54 @@
+[package]
+name = "ref-tools"
+version = "0.5.0"
+edition = "2021"
+authors = ["RoyalBit Inc. <admin@royalbit.ca>"]
+description = "Reference verification tools with headless Chrome"
+license-file = "LICENSE"
+publish = false
+readme = "README.md"
+
+[[bin]]
+name = "ref-tools"
+path = "src/main.rs"
+
+[dependencies]
+# CLI
+clap = { version = "4.5", features = ["derive", "env"] }
+
+# Async runtime
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "fs", "io-std", "signal", "sync", "time"] }
+futures = "0.3"
+
+# Headless Chrome (CDP)
+chromiumoxide = { version = "0.7", features = ["tokio-runtime"], default-features = false }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Regex for URL extraction
+regex = "1.11"
+
+# Error handling
+anyhow = "1.0"
+thiserror = "1.0"
+
+# Time
+chrono = { version = "0.4", features = ["serde"] }
+
+# URL parsing
+url = "2.5"
+
+[dev-dependencies]
+assert_cmd = "2.0"
+predicates = "3.1"
+tempfile = "3.14"
+wiremock = "0.6"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"

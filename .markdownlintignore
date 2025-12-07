@@ -1,0 +1,7 @@
+node_modules/
+target/
+vendor/
+lib/
+.git/
+Cargo.lock
+*.lock

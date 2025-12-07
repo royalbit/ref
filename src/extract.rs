@@ -13,7 +13,7 @@ pub fn extract_urls(content: &str) -> Vec<String> {
     for mat in re.find_iter(content) {
         let url = mat.as_str();
         // Clean trailing punctuation
-        let url = url.trim_end_matches(|c| matches!(c, ',' | '.' | ')' | ']' | ';' | ':'));
+        let url = url.trim_end_matches([',', '.', ')', ']', ';', ':']);
 
         if !seen.contains(url) {
             seen.insert(url.to_string());

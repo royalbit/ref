@@ -1,5 +1,7 @@
 //! E2E tests for ref-tools CLI
 
+#![allow(deprecated)] // cargo_bin deprecation - will update when assert_cmd stabilizes replacement
+
 use assert_cmd::Command;
 use predicates::prelude::*;
 use std::fs;

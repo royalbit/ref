@@ -133,9 +133,7 @@ async fn get_extractable_urls(args: &RefreshDataArgs) -> Result<Vec<(String, Str
         let urls = extract_extractable_urls(&content);
 
         let filtered: Vec<_> = if let Some(filter) = &args.filter {
-            urls.into_iter()
-                .filter(|(_, t)| t == filter)
-                .collect()
+            urls.into_iter().filter(|(_, t)| t == filter).collect()
         } else {
             urls
         };
@@ -166,7 +164,7 @@ fn extract_extractable_urls(content: &str) -> Vec<(String, String)> {
 
     for (re, ext_type) in &patterns {
         for mat in re.find_iter(content) {
-            let url = mat.as_str().trim_end_matches(|c| matches!(c, ',' | '.' | ')' | ']'));
+            let url = mat.as_str().trim_end_matches([',', '.', ')', ']']);
             if !seen.contains(url) {
                 seen.insert(url.to_string());
                 urls.push((url.to_string(), ext_type.to_string()));
@@ -178,7 +176,10 @@ fn extract_extractable_urls(content: &str) -> Vec<(String, String)> {
 }
 
 /// Extract data from multiple URLs
-pub async fn refresh_data(urls: &[(String, String)], config: &RefreshConfig) -> Result<RefreshReport> {
+pub async fn refresh_data(
+    urls: &[(String, String)],
+    config: &RefreshConfig,
+) -> Result<RefreshReport> {
     let pool = BrowserPool::new(1).await?; // Sequential for rate limiting
     let mut results = Vec::with_capacity(urls.len());
 
@@ -260,15 +261,13 @@ fn extract_instagram(url: &str, content: &str, timestamp: String) -> ExtractedDa
     use regex::Regex;
 
     let follower_re = Regex::new(r"([0-9,.]+[KMB]?)\s*[Ff]ollowers").unwrap();
-    let followers = follower_re
-        .captures(content)
-        .map(|c| c[1].to_string());
+    let followers = follower_re.captures(content).map(|c| c[1].to_string());
 
     // Extract username from URL
     let username = url
         .trim_end_matches('/')
         .split('/')
-        .last()
+        .next_back()
         .map(|s| s.to_string());
 
     ExtractedData {
@@ -320,8 +319,16 @@ fn extract_generic(url: &str, content: &str, timestamp: String) -> ExtractedData
         success: true,
         title,
         description,
-        amounts: if amounts.is_empty() { None } else { Some(amounts) },
-        percentages: if percentages.is_empty() { None } else { Some(percentages) },
+        amounts: if amounts.is_empty() {
+            None
+        } else {
+            Some(amounts)
+        },
+        percentages: if percentages.is_empty() {
+            None
+        } else {
+            Some(percentages)
+        },
         followers: None,
         username: None,
         error: None,
@@ -346,7 +353,8 @@ fn extract_title(content: &str) -> Option<String> {
 fn extract_description(content: &str) -> Option<String> {
     use regex::Regex;
 
-    let desc_re = Regex::new(r#"<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']"#).unwrap();
+    let desc_re =
+        Regex::new(r#"<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']"#).unwrap();
     desc_re.captures(content).map(|c| c[1].to_string())
 }
 
@@ -364,14 +372,21 @@ mod tests {
 
     #[test]
     fn test_get_extractor_type() {
-        assert_eq!(get_extractor_type("https://instagram.com/user"), "instagram");
-        assert_eq!(get_extractor_type("https://www.statista.com/stats"), "statista");
+        assert_eq!(
+            get_extractor_type("https://instagram.com/user"),
+            "instagram"
+        );
+        assert_eq!(
+            get_extractor_type("https://www.statista.com/stats"),
+            "statista"
+        );
         assert_eq!(get_extractor_type("https://example.com"), "generic");
     }
 
     #[test]
     fn test_extract_title() {
-        let html = "<html><head><title>Test Page</title></head><body><h1>Main Title</h1></body></html>";
+        let html =
+            "<html><head><title>Test Page</title></head><body><h1>Main Title</h1></body></html>";
         assert_eq!(extract_title(html), Some("Main Title".to_string()));
 
         let html_no_h1 = "<html><head><title>Test Page</title></head></html>";
@@ -381,7 +396,11 @@ mod tests {
     #[test]
     fn test_extract_instagram() {
         let content = "Profile has 577K Followers and 100 posts";
-        let result = extract_instagram("https://instagram.com/testuser", content, "2025-01-01T00:00:00Z".to_string());
+        let result = extract_instagram(
+            "https://instagram.com/testuser",
+            content,
+            "2025-01-01T00:00:00Z".to_string(),
+        );
         assert_eq!(result.followers, Some("577K".to_string()));
         assert_eq!(result.username, Some("testuser".to_string()));
     }

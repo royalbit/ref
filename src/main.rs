@@ -11,15 +11,17 @@ mod check_links;
 mod extract;
 mod refresh_data;
 
-use check_links::{CheckLinksArgs, run_check_links};
-use refresh_data::{RefreshDataArgs, run_refresh_data};
+use check_links::{run_check_links, CheckLinksArgs};
+use refresh_data::{run_refresh_data, RefreshDataArgs};
 
 #[derive(Parser)]
 #[command(name = "ref-tools")]
 #[command(author = "RoyalBit Inc.")]
 #[command(version)]
 #[command(about = "Reference verification tools with headless Chrome")]
-#[command(long_about = "Bypasses bot protection (403/999) that blocks curl/wget.\n\nCommands:\n  check-links    Check URL health in markdown files\n  refresh-data   Extract live data from URLs")]
+#[command(
+    long_about = "Bypasses bot protection (403/999) that blocks curl/wget.\n\nCommands:\n  check-links    Check URL health in markdown files\n  refresh-data   Extract live data from URLs"
+)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,

@@ -9,5 +9,5 @@ pub mod check_links;
 pub mod extract;
 pub mod refresh_data;
 
-pub use check_links::{check_links, CheckLinksConfig, LinkResult, LinkReport};
-pub use refresh_data::{refresh_data, RefreshConfig, ExtractedData};
+pub use check_links::{check_links, CheckLinksConfig, LinkReport, LinkResult};
+pub use refresh_data::{refresh_data, ExtractedData, RefreshConfig};

@@ -88,7 +88,11 @@ pub async fn run_check_links(args: CheckLinksArgs) -> Result<()> {
         std::process::exit(1);
     }
 
-    eprintln!("Found {} URLs to check (concurrency: {})\n", urls.len(), args.concurrency);
+    eprintln!(
+        "Found {} URLs to check (concurrency: {})\n",
+        urls.len(),
+        args.concurrency
+    );
 
     let config = CheckLinksConfig {
         concurrency: args.concurrency as usize,
@@ -106,7 +110,10 @@ pub async fn run_check_links(args: CheckLinksArgs) -> Result<()> {
     eprintln!("Total:    {}", report.summary.total);
     eprintln!("OK (2xx): {}", report.summary.ok);
     eprintln!("Blocked:  {}", report.summary.blocked);
-    eprintln!("Errors:   {}", report.summary.client_errors + report.summary.server_errors);
+    eprintln!(
+        "Errors:   {}",
+        report.summary.client_errors + report.summary.server_errors
+    );
     eprintln!("Failed:   {}", report.summary.failed);
 
     Ok(())
@@ -123,7 +130,7 @@ async fn get_urls(args: &CheckLinksArgs) -> Result<Vec<String>> {
         let urls: Vec<String> = stdin
             .lock()
             .lines()
-            .filter_map(|line| line.ok())
+            .map_while(Result::ok)
             .filter(|line| line.starts_with("http"))
             .collect();
         return Ok(urls);

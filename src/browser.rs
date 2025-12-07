@@ -31,9 +31,7 @@ impl BrowserPool {
             .context("Failed to launch Chrome. Is Chrome/Chromium installed?")?;
 
         // Spawn handler in background
-        tokio::spawn(async move {
-            while handler.next().await.is_some() {}
-        });
+        tokio::spawn(async move { while handler.next().await.is_some() {} });
 
         Ok(Self {
             browser,
@@ -48,8 +46,12 @@ impl BrowserPool {
         let page = self.browser.new_page("about:blank").await?;
 
         // Set user agent
-        page.execute(chromiumoxide::cdp::browser_protocol::network::SetUserAgentOverrideParams::new(&self.user_agent))
-            .await?;
+        page.execute(
+            chromiumoxide::cdp::browser_protocol::network::SetUserAgentOverrideParams::new(
+                &self.user_agent,
+            ),
+        )
+        .await?;
 
         Ok(BrowserPage {
             page,
@@ -119,18 +121,19 @@ impl BrowserPage {
     async fn get_status(&self) -> u16 {
         // chromiumoxide doesn't expose HTTP status directly
         // We check if page loaded successfully by looking for error pages
-        if let Ok(title) = self.page.get_title().await {
-            if let Some(t) = title {
-                let t_lower = t.to_lowercase();
-                if t_lower.contains("404") || t_lower.contains("not found") {
-                    return 404;
-                }
-                if t_lower.contains("403") || t_lower.contains("forbidden") || t_lower.contains("access denied") {
-                    return 403;
-                }
-                if t_lower.contains("500") || t_lower.contains("internal server error") {
-                    return 500;
-                }
+        if let Ok(Some(t)) = self.page.get_title().await {
+            let t_lower = t.to_lowercase();
+            if t_lower.contains("404") || t_lower.contains("not found") {
+                return 404;
+            }
+            if t_lower.contains("403")
+                || t_lower.contains("forbidden")
+                || t_lower.contains("access denied")
+            {
+                return 403;
+            }
+            if t_lower.contains("500") || t_lower.contains("internal server error") {
+                return 500;
             }
         }
         // If we got here, assume success
@@ -139,7 +142,10 @@ impl BrowserPage {
 
     /// Get page content (for data extraction)
     pub async fn content(&self) -> Result<String> {
-        self.page.content().await.context("Failed to get page content")
+        self.page
+            .content()
+            .await
+            .context("Failed to get page content")
     }
 }
 
@@ -201,7 +207,10 @@ mod tests {
     #[test]
     fn test_parse_error() {
         assert_eq!(parse_error("net::ERR_NAME_NOT_RESOLVED").1, "DNS_FAILED");
-        assert_eq!(parse_error("ERR_CONNECTION_REFUSED").1, "CONNECTION_REFUSED");
+        assert_eq!(
+            parse_error("ERR_CONNECTION_REFUSED").1,
+            "CONNECTION_REFUSED"
+        );
         assert_eq!(parse_error("random error").1, "NETWORK_ERROR");
     }
 }

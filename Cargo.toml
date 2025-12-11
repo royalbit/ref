@@ -26,6 +26,11 @@ chromiumoxide = { version = "0.7", features = ["tokio-runtime"], default-feature
 # Serialization
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+serde_yaml = "0.9"
+
+# HTML parsing & readability
+scraper = "0.22"
+html2text = "0.14"
 
 # Regex for URL extraction
 regex = "1.11"

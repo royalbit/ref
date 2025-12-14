@@ -124,14 +124,14 @@ endif
 	@ls -lh dist/
 
 install-user: build
-	@mkdir -p ~/.local/bin
-	@install -m 755 target/release/ref-tools ~/.local/bin/ref-tools
-	@echo "Installed to ~/.local/bin/ref-tools"
+	@mkdir -p ~/bin
+	@install -m 755 target/release/ref-tools ~/bin/ref-tools
+	@echo "Installed to ~/bin/ref-tools"
 
 install: install-user
 
 uninstall:
-	@rm -f ~/.local/bin/ref-tools
+	@rm -f ~/bin/ref-tools
 
 lint:
 	@cargo clippy --all-targets -- -D warnings

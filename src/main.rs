@@ -11,10 +11,13 @@ mod check_links;
 mod extract;
 mod fetch;
 mod refresh_data;
+mod schema;
+mod verify_refs;
 
 use check_links::{run_check_links, CheckLinksArgs};
 use fetch::{run_fetch, FetchArgs};
 use refresh_data::{run_refresh_data, RefreshDataArgs};
+use verify_refs::{run_verify_refs, VerifyRefsArgs};
 
 #[derive(Parser)]
 #[command(name = "ref-tools")]
@@ -37,6 +40,8 @@ enum Commands {
     CheckLinks(CheckLinksArgs),
     /// Extract live data from URLs (market sizes, pricing, statistics)
     RefreshData(RefreshDataArgs),
+    /// Verify references.yaml entries and update status
+    VerifyRefs(VerifyRefsArgs),
 }
 
 #[tokio::main]
@@ -47,5 +52,6 @@ async fn main() -> Result<()> {
         Commands::Fetch(args) => run_fetch(args).await,
         Commands::CheckLinks(args) => run_check_links(args).await,
         Commands::RefreshData(args) => run_refresh_data(args).await,
+        Commands::VerifyRefs(args) => run_verify_refs(args).await,
     }
 }

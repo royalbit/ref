@@ -48,7 +48,18 @@ fn test_refresh_data_help() {
         .assert()
         .success()
         .stdout(predicate::str::contains("--url"))
-        .stdout(predicate::str::contains("--filter"));
+        .stdout(predicate::str::contains("--timeout"));
+}
+
+#[test]
+fn test_verify_refs_help() {
+    ref_tools()
+        .args(["verify-refs", "--help"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("--parallel"))
+        .stdout(predicate::str::contains("--category"))
+        .stdout(predicate::str::contains("--dry-run"));
 }
 
 #[test]

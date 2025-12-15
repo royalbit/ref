@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://royalbit.ca/schemas/references.v1.schema.json",
+  "title": "references.yaml",
+  "description": "Schema for ref-tools reference tracking and verification",
+  "type": "object",
+  "required": ["meta", "references"],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "required": ["created", "tool", "total_links"],
+      "properties": {
+        "created": {
+          "type": "string",
+          "description": "ISO date when file was created",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "last_verified": {
+          "type": ["string", "null"],
+          "description": "ISO datetime of last verification run"
+        },
+        "tool": {
+          "type": "string",
+          "description": "Tool used for verification",
+          "const": "ref-tools"
+        },
+        "total_links": {
+          "type": "integer",
+          "description": "Total number of references",
+          "minimum": 0
+        }
+      }
+    },
+    "references": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["url", "title", "categories", "cited_in", "status"],
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "URL to verify",
+            "format": "uri"
+          },
+          "title": {
+            "type": "string",
+            "description": "Human-readable title",
+            "minLength": 1
+          },
+          "categories": {
+            "type": "array",
+            "description": "Categories for filtering",
+            "items": {"type": "string"},
+            "minItems": 1
+          },
+          "cited_in": {
+            "type": "array",
+            "description": "Files that cite this reference",
+            "items": {"type": "string"},
+            "minItems": 1
+          },
+          "status": {
+            "type": "string",
+            "description": "Verification status",
+            "enum": ["pending", "ok", "dead", "redirect", "paywall", "login"]
+          },
+          "verified": {
+            "type": ["string", "null"],
+            "description": "ISO datetime of last verification"
+          },
+          "notes": {
+            "type": ["string", "null"],
+            "description": "Notes (redirect target, error message)"
+          }
+        }
+      }
+    }
+  }
+}

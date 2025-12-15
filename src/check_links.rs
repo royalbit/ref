@@ -1,12 +1,13 @@
-//! check-links command: Check URL health in markdown files
+//! check-links command: Check URL health
+//!
+//! LLM-optimized output - JSON compact only.
 
 use crate::browser::BrowserPool;
 use crate::extract::extract_urls;
 use anyhow::{Context, Result};
 use clap::Args;
 use serde::Serialize;
-use std::collections::HashMap;
-use std::io::{self, BufRead, Write};
+use std::io::{self, BufRead};
 use tokio::fs;
 
 #[derive(Args)]
@@ -43,40 +44,23 @@ pub struct CheckLinksConfig {
     pub retries: u8,
 }
 
-/// Result for a single link check
+/// Result for a single link check (compact)
 #[derive(Debug, Serialize)]
 pub struct LinkResult {
     pub url: String,
     pub status: u16,
-    #[serde(rename = "statusText")]
-    pub status_text: String,
-    pub title: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
-    pub time: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub redirect_to: Option<String>,
 }
 
-/// Summary statistics
-#[derive(Debug, Serialize)]
-pub struct Summary {
-    pub total: usize,
-    pub ok: usize,
-    pub redirects: usize,
-    #[serde(rename = "clientErrors")]
-    pub client_errors: usize,
-    #[serde(rename = "serverErrors")]
-    pub server_errors: usize,
-    pub blocked: usize,
-    pub failed: usize,
-}
-
-/// Full report
+/// Full report (compact)
 #[derive(Debug, Serialize)]
 pub struct LinkReport {
-    pub summary: Summary,
-    #[serde(rename = "byStatus")]
-    pub by_status: HashMap<u16, usize>,
+    pub ok: usize,
+    pub failed: usize,
     pub results: Vec<LinkResult>,
-    pub timestamp: String,
 }
 
 /// Run the check-links command
@@ -89,7 +73,7 @@ pub async fn run_check_links(args: CheckLinksArgs) -> Result<()> {
     }
 
     eprintln!(
-        "Found {} URLs to check (concurrency: {})\n",
+        "Checking {} URLs ({} parallel)...",
         urls.len(),
         args.concurrency
     );
@@ -102,19 +86,10 @@ pub async fn run_check_links(args: CheckLinksArgs) -> Result<()> {
 
     let report = check_links(&urls, &config).await?;
 
-    // Output JSON to stdout
-    println!("{}", serde_json::to_string_pretty(&report)?);
+    // Output compact JSON to stdout
+    println!("{}", serde_json::to_string(&report)?);
 
-    // Summary to stderr
-    eprintln!("\n--- SUMMARY ---");
-    eprintln!("Total:    {}", report.summary.total);
-    eprintln!("OK (2xx): {}", report.summary.ok);
-    eprintln!("Blocked:  {}", report.summary.blocked);
-    eprintln!(
-        "Errors:   {}",
-        report.summary.client_errors + report.summary.server_errors
-    );
-    eprintln!("Failed:   {}", report.summary.failed);
+    eprintln!("Done: {}/{} OK", report.ok, report.ok + report.failed);
 
     Ok(())
 }
@@ -154,10 +129,11 @@ async fn get_urls(args: &CheckLinksArgs) -> Result<Vec<String>> {
 pub async fn check_links(urls: &[String], config: &CheckLinksConfig) -> Result<LinkReport> {
     let pool = BrowserPool::new(config.concurrency).await?;
     let mut results = Vec::with_capacity(urls.len());
+    let mut ok_count = 0;
+    let mut failed_count = 0;
 
     for url in urls {
-        eprint!("Checking: {}...", truncate(url, 60));
-        io::stderr().flush().ok();
+        eprintln!("  -> {}", truncate(url, 60));
 
         let page = pool.new_page().await?;
         let mut result = page.goto(url, config.timeout_ms).await?;
@@ -168,58 +144,57 @@ pub async fn check_links(urls: &[String], config: &CheckLinksConfig) -> Result<L
             result = page.goto(url, config.timeout_ms).await?;
         }
 
-        eprintln!(" {}", result.status);
+        // Determine if redirect (check final URL)
+        let redirect_to = if result.status >= 200 && result.status < 400 {
+            if let Some(final_url) = page.current_url().await {
+                // Check if different domain
+                let orig_host = url::Url::parse(url)
+                    .ok()
+                    .and_then(|u| u.host_str().map(String::from));
+                let final_host = url::Url::parse(&final_url)
+                    .ok()
+                    .and_then(|u| u.host_str().map(String::from));
+
+                if let (Some(orig), Some(fin)) = (orig_host, final_host) {
+                    let orig_norm = orig.trim_start_matches("www.");
+                    let fin_norm = fin.trim_start_matches("www.");
+                    if orig_norm != fin_norm {
+                        Some(final_url)
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
+        let is_ok = result.status >= 200 && result.status < 400 && redirect_to.is_none();
+        if is_ok {
+            ok_count += 1;
+        } else {
+            failed_count += 1;
+        }
 
         results.push(LinkResult {
             url: url.clone(),
             status: result.status,
-            status_text: result.status_text,
-            title: result.title,
             error: result.error,
-            time: result.time_ms,
+            redirect_to,
         });
     }
 
     pool.close().await?;
 
-    Ok(generate_report(results))
-}
-
-fn generate_report(mut results: Vec<LinkResult>) -> LinkReport {
-    let mut summary = Summary {
-        total: results.len(),
-        ok: 0,
-        redirects: 0,
-        client_errors: 0,
-        server_errors: 0,
-        blocked: 0,
-        failed: 0,
-    };
-
-    let mut by_status: HashMap<u16, usize> = HashMap::new();
-
-    for r in &results {
-        *by_status.entry(r.status).or_insert(0) += 1;
-
-        match r.status {
-            200..=299 => summary.ok += 1,
-            300..=399 => summary.redirects += 1,
-            403 => summary.blocked += 1,
-            400..=499 => summary.client_errors += 1,
-            500..=599 => summary.server_errors += 1,
-            _ => summary.failed += 1,
-        }
-    }
-
-    // Sort by status (errors first)
-    results.sort_by_key(|r| if r.status == 0 { 999 } else { r.status });
-
-    LinkReport {
-        summary,
-        by_status,
+    Ok(LinkReport {
+        ok: ok_count,
+        failed: failed_count,
         results,
-        timestamp: chrono::Utc::now().to_rfc3339(),
-    }
+    })
 }
 
 fn truncate(s: &str, max: usize) -> String {
@@ -238,41 +213,5 @@ mod tests {
     fn test_truncate() {
         assert_eq!(truncate("short", 10), "short");
         assert_eq!(truncate("this is a very long string", 10), "this is...");
-    }
-
-    #[test]
-    fn test_generate_report() {
-        let results = vec![
-            LinkResult {
-                url: "https://ok.com".into(),
-                status: 200,
-                status_text: "OK".into(),
-                title: Some("OK".into()),
-                error: None,
-                time: 100,
-            },
-            LinkResult {
-                url: "https://notfound.com".into(),
-                status: 404,
-                status_text: "Not Found".into(),
-                title: None,
-                error: None,
-                time: 50,
-            },
-            LinkResult {
-                url: "https://blocked.com".into(),
-                status: 403,
-                status_text: "Forbidden".into(),
-                title: None,
-                error: None,
-                time: 75,
-            },
-        ];
-
-        let report = generate_report(results);
-        assert_eq!(report.summary.total, 3);
-        assert_eq!(report.summary.ok, 1);
-        assert_eq!(report.summary.blocked, 1);
-        assert_eq!(report.summary.client_errors, 1);
     }
 }

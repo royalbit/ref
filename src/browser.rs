@@ -75,15 +75,11 @@ pub struct BrowserPage {
 impl BrowserPage {
     /// Navigate to URL and wait for DOM content loaded
     pub async fn goto(&self, url: &str, timeout_ms: u64) -> Result<PageResult> {
-        let start = std::time::Instant::now();
-
         let nav_result = tokio::time::timeout(
             std::time::Duration::from_millis(timeout_ms),
             self.page.goto(url),
         )
         .await;
-
-        let elapsed = start.elapsed().as_millis() as u64;
 
         match nav_result {
             Ok(Ok(_)) => {
@@ -91,28 +87,22 @@ impl BrowserPage {
                 let title = self.page.get_title().await.ok().flatten();
                 Ok(PageResult {
                     status,
-                    status_text: status_text(status),
                     title,
                     error: None,
-                    time_ms: elapsed,
                 })
             }
             Ok(Err(e)) => {
-                let (status, status_text) = parse_error(&e.to_string());
+                let (status, _) = parse_error(&e.to_string());
                 Ok(PageResult {
                     status,
-                    status_text,
                     title: None,
                     error: Some(e.to_string()),
-                    time_ms: elapsed,
                 })
             }
             Err(_) => Ok(PageResult {
                 status: 0,
-                status_text: "TIMEOUT".to_string(),
                 title: None,
                 error: Some("Navigation timeout".to_string()),
-                time_ms: elapsed,
             }),
         }
     }
@@ -147,36 +137,19 @@ impl BrowserPage {
             .await
             .context("Failed to get page content")
     }
+
+    /// Get current URL (after redirects)
+    pub async fn current_url(&self) -> Option<String> {
+        self.page.url().await.ok().flatten()
+    }
 }
 
 /// Result of a page navigation
 #[derive(Debug)]
 pub struct PageResult {
     pub status: u16,
-    pub status_text: String,
     pub title: Option<String>,
     pub error: Option<String>,
-    pub time_ms: u64,
-}
-
-fn status_text(status: u16) -> String {
-    match status {
-        200 => "OK",
-        201 => "Created",
-        301 => "Moved Permanently",
-        302 => "Found",
-        304 => "Not Modified",
-        400 => "Bad Request",
-        401 => "Unauthorized",
-        403 => "Forbidden",
-        404 => "Not Found",
-        429 => "Too Many Requests",
-        500 => "Internal Server Error",
-        502 => "Bad Gateway",
-        503 => "Service Unavailable",
-        _ => "Unknown",
-    }
-    .to_string()
 }
 
 fn parse_error(error: &str) -> (u16, String) {
@@ -196,13 +169,6 @@ fn parse_error(error: &str) -> (u16, String) {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_status_text() {
-        assert_eq!(status_text(200), "OK");
-        assert_eq!(status_text(404), "Not Found");
-        assert_eq!(status_text(999), "Unknown");
-    }
 
     #[test]
     fn test_parse_error() {

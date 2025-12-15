@@ -10,33 +10,31 @@
 # See: docs/adr/ for detailed rationale
 
 current:
-  version: "0.5.0"
+  version: "0.8.0"
   status: complete
-  summary: "Rust migration complete"
-  goal: "SHIP"
+  summary: "LLM-optimized output + deployment"
+  goal: "LLM_READY"
   deliverables:
-    - "[x] Cargo.toml with dependencies (clap, chromiumoxide, tokio, serde)"
-    - "[x] Makefile (build-static, build-compressed, cross-compile)"
-    - "[x] src/main.rs with CLI skeleton (clap derive)"
-    - "[x] check-links command with chromiumoxide"
-    - "[x] refresh-data command with extractors"
-    - "[x] E2E test suite (10 tests passing)"
-    - "[x] README.md updated for Rust version"
-    - "[x] Node.js code removed"
-    - "[x] Binary size: 4.4MB (macOS, no UPX)"
+    - "[x] v0.6.0: verify-refs command with references.yaml schema"
+    - "[x] v0.6.0: Status detection (ok/dead/redirect/paywall/login)"
+    - "[x] v0.6.0: JSON Schema v1 (schemas/references.v1.schema.json)"
+    - "[x] v0.7.0: fetch - structured sections[], links[], code[] output"
+    - "[x] v0.7.0: Content cleaning (strip nav/footer/aside)"
+    - "[x] v0.7.0: --raw and --cookies flags"
+    - "[x] v0.7.1: check-links - compact JSON output"
+    - "[x] v0.7.1: refresh-data - compact JSON output, removed --filter"
+    - "[x] v0.8.0: deploy-kveldulf target (remote build)"
+    - "[x] v0.8.0: Simplified Makefile"
 
 next:
-  - version: "0.6.0"
-    summary: "Cross-compilation"
-    goal: "DISTRIBUTE"
+  - version: "0.9.0"
+    summary: "PDF extraction"
+    goal: "PDF_SUPPORT"
     deliverables:
-      - "[ ] Linux x86_64 musl static binary"
-      - "[ ] Linux aarch64 musl static binary"
-      - "[ ] UPX compression on Linux (<2MB)"
+      - "[ ] PDF to structured text (local extraction, no APIs)"
+      - "[ ] Extract text, headings, tables from PDF"
+      - "[ ] Output same JSON structure as fetch"
 
 backlog:
   - "MCP server mode (like forge-mcp)"
-  - "Watch mode for continuous checking"
-  - "HTML report output (--format html)"
   - "Proxy support (--proxy)"
-  - "Cookie/auth support for paywalled sites"

@@ -1,6 +1,6 @@
 # ref-tools
 
-LLM-optimized web fetching. JSON output for agents, not humans.
+LLM-optimized reference tools. JSON output for AI agents, not humans.
 
 Bypasses bot protection (403/999) via headless Chrome.
 
@@ -30,6 +30,43 @@ Fetch URL content as structured JSON.
 ref-tools fetch <url>
 ```
 
+### pdf
+
+Extract text from PDF files to structured JSON.
+
+```bash
+ref-tools pdf document.pdf
+ref-tools pdf *.pdf  # Multiple files
+```
+
+### init
+
+Create a new references.yaml template.
+
+```bash
+ref-tools init                    # Creates references.yaml
+ref-tools init -o refs.yaml       # Custom filename
+```
+
+### scan
+
+Scan markdown files for URLs, build/update references.yaml.
+
+```bash
+ref-tools scan README.md docs/*.md
+ref-tools scan . --output refs.yaml
+```
+
+### verify-refs
+
+Verify references.yaml entries, update status.
+
+```bash
+ref-tools verify-refs references.yaml
+ref-tools verify-refs references.yaml --category research
+ref-tools verify-refs references.yaml --parallel 10
+```
+
 ### check-links
 
 Check URL health. Returns status codes.
@@ -38,16 +75,6 @@ Check URL health. Returns status codes.
 ref-tools check-links <file.md>       # All URLs in file
 ref-tools check-links --url <URL>     # Single URL
 ref-tools check-links --stdin         # From stdin
-```
-
-### verify-refs (coming in v0.6.0)
-
-Verify references.yaml entries, update status.
-
-```bash
-ref-tools verify-refs references.yaml
-ref-tools verify-refs references.yaml --category research
-ref-tools verify-refs references.yaml --parallel 10
 ```
 
 ### refresh-data

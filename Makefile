@@ -4,7 +4,6 @@
 .PHONY: help build install install-release uninstall lint format test clean pre-commit
 .PHONY: build-linux build-linux-arm64 build-windows build-all
 .PHONY: release-linux release-linux-arm64 release-windows release-all
-.PHONY: deploy-kveldulf
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # CROSS-COMPILATION TARGETS
@@ -23,9 +22,6 @@ DIST_DIR := dist
 
 # Install directory (~/bin on all machines)
 INSTALL_DIR := $(HOME)/bin
-
-# Remote deploy target
-KVELDULF := kveldulf
 
 # Tool detection
 HAS_UPX := $(shell command -v upx 2> /dev/null)
@@ -54,9 +50,6 @@ help:
 	@echo "  make release-linux-arm64- Linux ARM64"
 	@echo "  make release-windows    - Windows x86_64"
 	@echo "  make release-all        - All release binaries"
-	@echo ""
-	@echo "Deploy:"
-	@echo "  make deploy-kveldulf    - Build on remote, install to ~/bin"
 	@echo ""
 	@echo "Code Quality:"
 	@echo "  make lint / format / test / pre-commit"
@@ -136,22 +129,6 @@ release-all: release-linux release-linux-arm64 release-windows
 	@echo ""
 	@echo "Release binaries in $(DIST_DIR)/:"
 	@ls -lh $(DIST_DIR)/
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# REMOTE DEPLOY
-# ═══════════════════════════════════════════════════════════════════════════════
-
-deploy-kveldulf:
-	@echo "Deploying to $(KVELDULF)..."
-	@echo "  1. Syncing source..."
-	@rsync -az --delete --exclude='target/' --exclude='.git/' --exclude='dist/' . $(KVELDULF):~/src/ref-tools/
-	@echo "  2. Building on $(KVELDULF)..."
-	@ssh $(KVELDULF) "cd ~/src/ref-tools && cargo build --release"
-	@echo "  3. Installing..."
-	@ssh $(KVELDULF) "mkdir -p ~/bin && install -m 755 ~/src/ref-tools/target/release/ref-tools ~/bin/ref-tools"
-	@echo "  4. Verifying..."
-	@ssh $(KVELDULF) "~/bin/ref-tools --version"
-	@echo "Done!"
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # CODE QUALITY

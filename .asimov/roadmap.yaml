@@ -34,6 +34,19 @@ current:
 
 next:
   - version: "1.1.0"
+    summary: "Rebrand & Release Infrastructure"
+    goal: "REBRAND_RELEASE"
+    priority: CRITICAL
+    deliverables:
+      - "[ ] Rebrand: ref-tools → ref (CLI) / RoyalBit Ref (product)"
+      - "[ ] Cargo.toml: crates.io publishing metadata"
+      - "[ ] GitHub Actions: CI workflow (test, lint, build)"
+      - "[ ] GitHub Actions: Release workflow (multi-arch)"
+      - "[ ] Targets: linux-x64, linux-arm64, macos-x64, macos-arm64, windows-x64"
+      - "[ ] update command: self-update from GitHub releases"
+      - "[ ] Update LICENSE, README, schemas for new branding"
+
+  - version: "1.2.0"
     summary: "Enhanced extraction"
     goal: "BETTER_EXTRACTION"
     deliverables:

@@ -110,8 +110,8 @@ async fn get_extractable_urls(args: &RefreshDataArgs) -> Result<Vec<(String, Str
     }
 
     eprintln!("Usage:");
-    eprintln!("  ref-tools refresh-data --url <URL>  Extract from single URL");
-    eprintln!("  ref-tools refresh-data <file.md>    Extract from all URLs in file");
+    eprintln!("  ref refresh-data --url <URL>  Extract from single URL");
+    eprintln!("  ref refresh-data <file.md>    Extract from all URLs in file");
     std::process::exit(1);
 }
 

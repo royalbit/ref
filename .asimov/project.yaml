@@ -4,10 +4,10 @@
 # Behavior protocols are hardcoded in the asimov binary.
 
 identity:
-  name: "ref-tools"
+  name: "RoyalBit Ref"
   type: rust
-  version: "0.1.0"
-  tagline: "Reference verification tools with headless Chrome"
+  version: "1.1.1"
+  tagline: "LLM-optimized reference verification toolkit"
 
 quality:
   test: "cargo test"

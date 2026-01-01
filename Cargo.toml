@@ -1,15 +1,18 @@
 [package]
-name = "ref-tools"
-version = "1.0.2"
+name = "royalbit-ref"
+version = "1.1.1"
 edition = "2021"
 authors = ["RoyalBit Inc. <admin@royalbit.ca>"]
-description = "Reference verification tools with headless Chrome"
-license-file = "LICENSE"
-publish = false
+description = "RoyalBit Ref - LLM-optimized reference verification toolkit"
+license = "Elastic-2.0"
 readme = "README.md"
+repository = "https://github.com/royalbit/ref"
+homepage = "https://royalbit.ca/ref"
+keywords = ["cli", "reference", "verification", "llm", "headless-chrome"]
+categories = ["command-line-utilities", "web-programming"]
 
 [[bin]]
-name = "ref-tools"
+name = "ref"
 path = "src/main.rs"
 
 [dependencies]
@@ -50,6 +53,9 @@ chrono = { version = "0.4", features = ["serde"] }
 
 # URL parsing
 url = "2.5"
+
+# Self-update
+reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
 
 [dev-dependencies]
 assert_cmd = "2.0"

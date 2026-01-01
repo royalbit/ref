@@ -122,7 +122,7 @@ mod tests {
             meta: Meta {
                 created: "2025-12-15".to_string(),
                 last_verified: None,
-                tool: "ref-tools".to_string(),
+                tool: "ref".to_string(),
                 total_links: 1,
             },
             references: vec![Reference {

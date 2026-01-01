@@ -1,4 +1,4 @@
-//! ref-tools: LLM-optimized reference tools
+//! RoyalBit Ref: LLM-optimized reference toolkit
 //!
 //! JSON output for agents, not humans.
 //! Bypasses bot protection via headless Chrome.
@@ -12,6 +12,7 @@ pub mod pdf;
 pub mod refresh_data;
 pub mod scan;
 pub mod schema;
+pub mod update;
 pub mod verify_refs;
 
 pub use check_links::{check_links, CheckLinksConfig, LinkReport, LinkResult};

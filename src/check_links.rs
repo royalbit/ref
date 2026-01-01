@@ -119,9 +119,9 @@ async fn get_urls(args: &CheckLinksArgs) -> Result<Vec<String>> {
     }
 
     eprintln!("Usage:");
-    eprintln!("  ref-tools check-links <file.md>    Check URLs in markdown file");
-    eprintln!("  ref-tools check-links --url <URL>  Check single URL");
-    eprintln!("  ref-tools check-links --stdin      Read URLs from stdin");
+    eprintln!("  ref check-links <file.md>    Check URLs in markdown file");
+    eprintln!("  ref check-links --url <URL>  Check single URL");
+    eprintln!("  ref check-links --stdin      Read URLs from stdin");
     std::process::exit(1);
 }
 

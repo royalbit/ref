@@ -110,7 +110,7 @@ pub async fn run_scan(args: ScanArgs) -> Result<()> {
                 meta: Meta {
                     created: now,
                     last_verified: None,
-                    tool: "ref-tools".to_string(),
+                    tool: "ref".to_string(),
                     total_links: 0,
                 },
                 references: Vec::new(),

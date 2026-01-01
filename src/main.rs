@@ -1,4 +1,4 @@
-//! ref-tools CLI
+//! RoyalBit Ref CLI
 //!
 //! LLM-optimized reference tools with headless Chrome.
 //! Bypasses bot protection (403/999) that blocks curl/wget.
@@ -15,6 +15,7 @@ mod pdf;
 mod refresh_data;
 mod scan;
 mod schema;
+mod update;
 mod verify_refs;
 
 use check_links::{run_check_links, CheckLinksArgs};
@@ -23,13 +24,14 @@ use init::{run_init, InitArgs};
 use pdf::{run_pdf, PdfArgs};
 use refresh_data::{run_refresh_data, RefreshDataArgs};
 use scan::{run_scan, ScanArgs};
+use update::{run_update, UpdateArgs};
 use verify_refs::{run_verify_refs, VerifyRefsArgs};
 
 #[derive(Parser)]
-#[command(name = "ref-tools")]
+#[command(name = "ref")]
 #[command(author = "RoyalBit Inc.")]
 #[command(version)]
-#[command(about = "LLM-optimized reference tools")]
+#[command(about = "RoyalBit Ref - LLM-optimized reference toolkit")]
 #[command(
     long_about = "Reference verification and web fetching for AI agents.\nBypasses bot protection (403/999) that blocks curl/wget.\nAll output is JSON for LLM consumption."
 )]
@@ -54,6 +56,8 @@ enum Commands {
     CheckLinks(CheckLinksArgs),
     /// Extract live data from URLs (market sizes, pricing, statistics)
     RefreshData(RefreshDataArgs),
+    /// Update to the latest version from GitHub releases
+    Update(UpdateArgs),
 }
 
 #[tokio::main]
@@ -68,5 +72,6 @@ async fn main() -> Result<()> {
         Commands::CheckLinks(args) => run_check_links(args).await,
         Commands::RefreshData(args) => run_refresh_data(args).await,
         Commands::VerifyRefs(args) => run_verify_refs(args).await,
+        Commands::Update(args) => run_update(args).await,
     }
 }

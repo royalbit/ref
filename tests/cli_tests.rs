@@ -1,4 +1,4 @@
-//! E2E tests for ref-tools CLI
+//! E2E tests for RoyalBit Ref CLI
 
 #![allow(deprecated)] // cargo_bin deprecation - will update when assert_cmd stabilizes replacement
 
@@ -7,32 +7,33 @@ use predicates::prelude::*;
 use std::fs;
 use tempfile::tempdir;
 
-fn ref_tools() -> Command {
-    Command::cargo_bin("ref-tools").unwrap()
+fn ref_cmd() -> Command {
+    Command::cargo_bin("ref").unwrap()
 }
 
 #[test]
 fn test_help() {
-    ref_tools()
+    ref_cmd()
         .arg("--help")
         .assert()
         .success()
         .stdout(predicate::str::contains("check-links"))
-        .stdout(predicate::str::contains("refresh-data"));
+        .stdout(predicate::str::contains("refresh-data"))
+        .stdout(predicate::str::contains("update"));
 }
 
 #[test]
 fn test_version() {
-    ref_tools()
+    ref_cmd()
         .arg("--version")
         .assert()
         .success()
-        .stdout(predicate::str::contains("ref-tools"));
+        .stdout(predicate::str::contains("ref"));
 }
 
 #[test]
 fn test_check_links_help() {
-    ref_tools()
+    ref_cmd()
         .args(["check-links", "--help"])
         .assert()
         .success()
@@ -43,7 +44,7 @@ fn test_check_links_help() {
 
 #[test]
 fn test_refresh_data_help() {
-    ref_tools()
+    ref_cmd()
         .args(["refresh-data", "--help"])
         .assert()
         .success()
@@ -53,7 +54,7 @@ fn test_refresh_data_help() {
 
 #[test]
 fn test_verify_refs_help() {
-    ref_tools()
+    ref_cmd()
         .args(["verify-refs", "--help"])
         .assert()
         .success()
@@ -63,8 +64,18 @@ fn test_verify_refs_help() {
 }
 
 #[test]
+fn test_update_help() {
+    ref_cmd()
+        .args(["update", "--help"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("--check"))
+        .stdout(predicate::str::contains("--force"));
+}
+
+#[test]
 fn test_check_links_no_args() {
-    ref_tools()
+    ref_cmd()
         .arg("check-links")
         .assert()
         .failure()
@@ -73,7 +84,7 @@ fn test_check_links_no_args() {
 
 #[test]
 fn test_refresh_data_no_args() {
-    ref_tools()
+    ref_cmd()
         .arg("refresh-data")
         .assert()
         .failure()
@@ -82,7 +93,7 @@ fn test_refresh_data_no_args() {
 
 #[test]
 fn test_check_links_file_not_found() {
-    ref_tools()
+    ref_cmd()
         .args(["check-links", "nonexistent.md"])
         .assert()
         .failure()
@@ -95,7 +106,7 @@ fn test_check_links_empty_file() {
     let file_path = dir.path().join("empty.md");
     fs::write(&file_path, "# No URLs here\n\nJust text.").unwrap();
 
-    ref_tools()
+    ref_cmd()
         .args(["check-links", file_path.to_str().unwrap()])
         .assert()
         .failure()
@@ -110,7 +121,7 @@ fn test_check_links_with_urls() {
 
     // This test requires Chrome, so we just check it starts
     // Full E2E would need Chrome installed
-    ref_tools()
+    ref_cmd()
         .args(["check-links", file_path.to_str().unwrap()])
         .timeout(std::time::Duration::from_secs(5))
         .assert();
@@ -119,12 +130,12 @@ fn test_check_links_with_urls() {
 
 #[test]
 fn test_concurrency_validation() {
-    ref_tools()
+    ref_cmd()
         .args(["check-links", "--concurrency", "0", "test.md"])
         .assert()
         .failure();
 
-    ref_tools()
+    ref_cmd()
         .args(["check-links", "--concurrency", "21", "test.md"])
         .assert()
         .failure();

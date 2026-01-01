@@ -46,7 +46,7 @@ pub async fn run_init(args: InitArgs) -> Result<()> {
         meta: Meta {
             created: date,
             last_verified: None,
-            tool: "ref-tools".to_string(),
+            tool: "ref".to_string(),
             total_links: 1,
         },
         references: vec![Reference {

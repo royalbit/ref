@@ -614,11 +614,24 @@ fn select_attr(doc: &Html, sel: &str, attr: &str) -> Option<String> {
         .filter(|s| !s.is_empty())
 }
 
+/// Find the largest valid char boundary <= pos
+fn floor_char_boundary(s: &str, pos: usize) -> usize {
+    if pos >= s.len() {
+        return s.len();
+    }
+    let mut i = pos;
+    while i > 0 && !s.is_char_boundary(i) {
+        i -= 1;
+    }
+    i
+}
+
 fn truncate(s: &str, max: usize) -> String {
     if s.len() <= max {
         s.to_string()
     } else {
-        format!("{}...", &s[..max - 3])
+        let end = floor_char_boundary(s, max - 3);
+        format!("{}...", &s[..end])
     }
 }
 
@@ -626,10 +639,10 @@ fn truncate_section(s: &str, max: usize) -> String {
     if s.len() <= max {
         s.to_string()
     } else {
-        // Try to truncate at word boundary
-        let truncated = &s[..max];
+        let end = floor_char_boundary(s, max);
+        let truncated = &s[..end];
         if let Some(last_space) = truncated.rfind(' ') {
-            if last_space > max - 50 {
+            if last_space > end.saturating_sub(50) {
                 return format!("{}...", &s[..last_space]);
             }
         }
@@ -681,6 +694,20 @@ mod tests {
     fn test_truncate() {
         assert_eq!(truncate("short", 10), "short");
         assert_eq!(truncate("this is a long string", 10), "this is...");
+        // Multi-byte chars: ─ is 3 bytes, should not panic
+        let dashes = "─".repeat(100);
+        let result = truncate(&dashes, 20);
+        assert!(result.ends_with("..."));
+        assert!(result.len() <= 23); // max 20 + safety margin for ...
+    }
+
+    #[test]
+    fn test_floor_char_boundary() {
+        let s = "hello─world"; // ─ is at bytes 5..8
+        assert_eq!(floor_char_boundary(s, 5), 5); // exactly at boundary
+        assert_eq!(floor_char_boundary(s, 6), 5); // inside ─, goes back
+        assert_eq!(floor_char_boundary(s, 7), 5); // inside ─, goes back
+        assert_eq!(floor_char_boundary(s, 8), 8); // after ─
     }
 
     #[test]

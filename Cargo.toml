@@ -1,6 +1,6 @@
 [package]
 name = "ref-tools"
-version = "1.0.1"
+version = "1.0.2"
 edition = "2021"
 authors = ["RoyalBit Inc. <admin@royalbit.ca>"]
 description = "Reference verification tools with headless Chrome"

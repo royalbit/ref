@@ -1,118 +1,161 @@
 # ref-tools - Reference verification tools
 # Build targets for optimized static binaries
 
-.PHONY: help build build-linux install deploy-kveldulf uninstall lint format test clean pre-commit
+.PHONY: help build install install-release uninstall lint format test clean pre-commit
+.PHONY: build-linux build-linux-arm64 build-windows build-all
+.PHONY: release-linux release-linux-arm64 release-windows release-all
+.PHONY: deploy-kveldulf
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# OS AND ARCHITECTURE DETECTION
+# CROSS-COMPILATION TARGETS
 # ═══════════════════════════════════════════════════════════════════════════════
 
-UNAME_S := $(shell uname -s 2>/dev/null || echo Windows)
-UNAME_M := $(shell uname -m 2>/dev/null || echo x86_64)
+TARGET_LINUX       := x86_64-unknown-linux-musl
+TARGET_LINUX_ARM64 := aarch64-unknown-linux-gnu
+TARGET_WINDOWS     := x86_64-pc-windows-gnu
 
-ifeq ($(UNAME_M),arm64)
-    ARCH := aarch64
-else ifeq ($(UNAME_M),aarch64)
-    ARCH := aarch64
-else
-    ARCH := x86_64
-endif
+BIN_LINUX       := target/$(TARGET_LINUX)/release/ref-tools
+BIN_LINUX_ARM64 := target/$(TARGET_LINUX_ARM64)/release/ref-tools
+BIN_WINDOWS     := target/$(TARGET_WINDOWS)/release/ref-tools.exe
 
-ifeq ($(UNAME_S),Linux)
-    PLATFORM := linux
-    BUILD_TARGET := $(ARCH)-unknown-linux-musl
-    STATIC_BINARY := target/$(BUILD_TARGET)/release/ref-tools
-    TARGET_FLAG := --target $(BUILD_TARGET)
-    UPX_SUPPORTED := true
-else ifeq ($(UNAME_S),Darwin)
-    PLATFORM := macos
-    BUILD_TARGET := $(ARCH)-apple-darwin
-    STATIC_BINARY := target/release/ref-tools
-    TARGET_FLAG :=
-    UPX_SUPPORTED := false
-else
-    PLATFORM := unknown
-    BUILD_TARGET :=
-    STATIC_BINARY := target/release/ref-tools
-    TARGET_FLAG :=
-    UPX_SUPPORTED := false
-endif
+# Output directory for release binaries
+DIST_DIR := dist
 
-HAS_UPX := $(shell command -v upx 2> /dev/null)
-HAS_CROSS := $(shell command -v cross 2> /dev/null)
-HAS_DOCKER := $(shell command -v docker 2> /dev/null)
-
-# Target for kveldulf (Linux x86_64)
-LINUX_TARGET := x86_64-unknown-linux-musl
-LINUX_BINARY := target/$(LINUX_TARGET)/release/ref-tools
+# Install directory (~/bin on all machines)
+INSTALL_DIR := $(HOME)/bin
 
 # Remote deploy target
 KVELDULF := kveldulf
 
+# Tool detection
+HAS_UPX := $(shell command -v upx 2> /dev/null)
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# HELP
+# ═══════════════════════════════════════════════════════════════════════════════
+
 help:
-	@echo "ref-tools - Available Commands"
+	@echo "ref-tools - Build Commands"
 	@echo ""
-	@echo "Platform: $(PLATFORM) ($(ARCH))"
-	@echo "Target:   $(BUILD_TARGET)"
+	@echo "Build & Install:"
+	@echo "  make build              - Build for current platform"
+	@echo "  make install            - Build and install to $(INSTALL_DIR)"
+	@echo "  make install-release    - Install release binary (from dist/)"
+	@echo "  make uninstall          - Remove from $(INSTALL_DIR)"
 	@echo ""
-	@echo "Build Targets:"
-	@echo "  make build              - Standard release build"
-	@echo "  make build-linux        - Cross-compile for Linux x86_64 (requires cross + Docker)"
+	@echo "Cross-Compilation:"
+	@echo "  make build-linux        - Linux x86_64 (musl static)"
+	@echo "  make build-linux-arm64  - Linux ARM64"
+	@echo "  make build-windows      - Windows x86_64"
+	@echo "  make build-all          - All targets"
 	@echo ""
-	@echo "Install/Deploy Targets:"
-	@echo "  make install            - Install to ~/bin (local macOS)"
-	@echo "  make deploy-kveldulf    - Sync source, build on kveldulf, install to ~/bin"
-	@echo "  make uninstall          - Remove from ~/bin"
+	@echo "Release (build + UPX → dist/):"
+	@echo "  make release-linux      - Linux x86_64 + UPX"
+	@echo "  make release-linux-arm64- Linux ARM64"
+	@echo "  make release-windows    - Windows x86_64"
+	@echo "  make release-all        - All release binaries"
+	@echo ""
+	@echo "Deploy:"
+	@echo "  make deploy-kveldulf    - Build on remote, install to ~/bin"
 	@echo ""
 	@echo "Code Quality:"
-	@echo "  make lint               - Run pedantic clippy checks"
-	@echo "  make format             - Format code with rustfmt"
-	@echo "  make test               - Run all tests"
+	@echo "  make lint / format / test / pre-commit"
 	@echo ""
-	@echo "Workflows:"
-	@echo "  make pre-commit         - Full check (format + lint + test)"
 	@echo "  make clean              - Remove build artifacts"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# NATIVE BUILD
+# ═══════════════════════════════════════════════════════════════════════════════
 
 build:
 	@echo "Building release binary..."
 	@cargo build --release
-	@echo "Binary: target/release/ref-tools"
 	@ls -lh target/release/ref-tools
 
-build-linux:
-ifndef HAS_CROSS
-	@echo "Error: cross-rs not found. Install: cargo install cross"
-	@exit 1
-endif
-ifndef HAS_DOCKER
-	@echo "Error: Docker not found. cross-rs requires Docker."
-	@exit 1
-endif
-	@echo "Cross-compiling for Linux x86_64..."
-	@cross build --release --target $(LINUX_TARGET)
-	@echo "Binary: $(LINUX_BINARY)"
-	@ls -lh $(LINUX_BINARY)
-
 install: build
-	@mkdir -p ~/bin
-	@install -m 755 target/release/ref-tools ~/bin/ref-tools
-	@echo "Installed to ~/bin/ref-tools"
+	@mkdir -p $(INSTALL_DIR)
+	@install -m 755 target/release/ref-tools $(INSTALL_DIR)/ref-tools
+	@echo "Installed to $(INSTALL_DIR)/ref-tools"
 
-# Deploy to kveldulf by building remotely (more reliable than cross-compile)
+install-release: $(DIST_DIR)/ref-tools-linux-x86_64
+	@mkdir -p $(INSTALL_DIR)
+	@install -m 755 $(DIST_DIR)/ref-tools-linux-x86_64 $(INSTALL_DIR)/ref-tools
+	@echo "Installed to $(INSTALL_DIR)/ref-tools"
+
+uninstall:
+	@rm -f $(INSTALL_DIR)/ref-tools
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CROSS-COMPILATION BUILDS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+build-linux:
+	@echo "Building for Linux x86_64 (musl static)..."
+	@cargo build --release --target $(TARGET_LINUX)
+	@ls -lh $(BIN_LINUX)
+
+build-linux-arm64:
+	@echo "Building for Linux ARM64..."
+	@cargo build --release --target $(TARGET_LINUX_ARM64)
+	@ls -lh $(BIN_LINUX_ARM64)
+
+build-windows:
+	@echo "Building for Windows x86_64..."
+	@cargo build --release --target $(TARGET_WINDOWS)
+	@ls -lh $(BIN_WINDOWS)
+
+build-all: build-linux build-linux-arm64 build-windows
+	@echo "All cross-compile targets built."
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# RELEASE BUILDS (with UPX compression where supported)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+$(DIST_DIR):
+	@mkdir -p $(DIST_DIR)
+
+release-linux: build-linux $(DIST_DIR)
+	@cp $(BIN_LINUX) $(DIST_DIR)/ref-tools-linux-x86_64
+ifdef HAS_UPX
+	@echo "Compressing with UPX..."
+	@upx --best --lzma $(DIST_DIR)/ref-tools-linux-x86_64
+endif
+	@ls -lh $(DIST_DIR)/ref-tools-linux-x86_64
+
+release-linux-arm64: build-linux-arm64 $(DIST_DIR)
+	@cp $(BIN_LINUX_ARM64) $(DIST_DIR)/ref-tools-linux-arm64
+	@echo "Note: UPX not supported for ARM64"
+	@ls -lh $(DIST_DIR)/ref-tools-linux-arm64
+
+release-windows: build-windows $(DIST_DIR)
+	@cp $(BIN_WINDOWS) $(DIST_DIR)/ref-tools-windows-x86_64.exe
+	@echo "Note: UPX skipped for Windows (antivirus false positives)"
+	@ls -lh $(DIST_DIR)/ref-tools-windows-x86_64.exe
+
+release-all: release-linux release-linux-arm64 release-windows
+	@echo ""
+	@echo "Release binaries in $(DIST_DIR)/:"
+	@ls -lh $(DIST_DIR)/
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# REMOTE DEPLOY
+# ═══════════════════════════════════════════════════════════════════════════════
+
 deploy-kveldulf:
 	@echo "Deploying to $(KVELDULF)..."
 	@echo "  1. Syncing source..."
-	@rsync -az --delete --exclude='target/' --exclude='.git/' . $(KVELDULF):~/src/ref-tools/
+	@rsync -az --delete --exclude='target/' --exclude='.git/' --exclude='dist/' . $(KVELDULF):~/src/ref-tools/
 	@echo "  2. Building on $(KVELDULF)..."
 	@ssh $(KVELDULF) "cd ~/src/ref-tools && cargo build --release"
-	@echo "  3. Installing to ~/bin..."
+	@echo "  3. Installing..."
 	@ssh $(KVELDULF) "mkdir -p ~/bin && install -m 755 ~/src/ref-tools/target/release/ref-tools ~/bin/ref-tools"
 	@echo "  4. Verifying..."
 	@ssh $(KVELDULF) "~/bin/ref-tools --version"
-	@echo "Deployed successfully!"
+	@echo "Done!"
 
-uninstall:
-	@rm -f ~/bin/ref-tools
+# ═══════════════════════════════════════════════════════════════════════════════
+# CODE QUALITY
+# ═══════════════════════════════════════════════════════════════════════════════
 
 lint:
 	@cargo clippy --all-targets -- -D warnings
@@ -123,7 +166,12 @@ format:
 test:
 	@cargo test
 
+pre-commit: format lint test
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# HOUSEKEEPING
+# ═══════════════════════════════════════════════════════════════════════════════
+
 clean:
 	@cargo clean
-
-pre-commit: format lint test
+	@rm -rf $(DIST_DIR)

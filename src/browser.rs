@@ -3,8 +3,51 @@
 use anyhow::{Context, Result};
 use chromiumoxide::{Browser, BrowserConfig, Page};
 use futures::StreamExt;
+use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::Semaphore;
+
+/// Auto-detect Chrome/Chromium executable path based on OS
+fn detect_chrome_path() -> Option<PathBuf> {
+    #[cfg(target_os = "linux")]
+    let candidates = [
+        "/usr/bin/google-chrome-stable",
+        "/usr/bin/google-chrome",
+        "/usr/bin/chromium-browser",
+        "/usr/bin/chromium",
+        "/snap/bin/chromium",
+        "/usr/local/bin/chrome",
+        "/usr/local/bin/chromium",
+    ];
+
+    #[cfg(target_os = "macos")]
+    let candidates = [
+        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+        "/Applications/Chromium.app/Contents/MacOS/Chromium",
+        "/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary",
+    ];
+
+    #[cfg(target_os = "windows")]
+    let candidates = [
+        r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+        r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+        &format!(
+            r"{}\Google\Chrome\Application\chrome.exe",
+            std::env::var("LOCALAPPDATA").unwrap_or_default()
+        ),
+    ];
+
+    #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
+    let candidates: [&str; 0] = [];
+
+    for path in candidates {
+        let p = PathBuf::from(path);
+        if p.exists() {
+            return Some(p);
+        }
+    }
+    None
+}
 
 /// Browser pool configuration
 pub struct BrowserPool {
@@ -16,7 +59,18 @@ pub struct BrowserPool {
 impl BrowserPool {
     /// Create a new browser pool with concurrency limit
     pub async fn new(concurrency: usize) -> Result<Self> {
+        let chrome_path = detect_chrome_path().ok_or_else(|| {
+            anyhow::anyhow!(
+                "Chrome/Chromium not found. Searched paths:\n  \
+                 Linux: /usr/bin/google-chrome-stable, /usr/bin/google-chrome, /usr/bin/chromium-browser, /usr/bin/chromium\n  \
+                 macOS: /Applications/Google Chrome.app/...\n  \
+                 Windows: C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe\n\
+                 Please install Chrome or Chromium."
+            )
+        })?;
+
         let config = BrowserConfig::builder()
+            .chrome_executable(chrome_path)
             .no_sandbox()
             .arg("--disable-gpu")
             .arg("--disable-dev-shm-usage")
@@ -28,7 +82,7 @@ impl BrowserPool {
 
         let (browser, mut handler) = Browser::launch(config)
             .await
-            .context("Failed to launch Chrome. Is Chrome/Chromium installed?")?;
+            .context("Failed to launch Chrome")?;
 
         // Spawn handler in background
         tokio::spawn(async move { while handler.next().await.is_some() {} });
@@ -178,5 +232,16 @@ mod tests {
             "CONNECTION_REFUSED"
         );
         assert_eq!(parse_error("random error").1, "NETWORK_ERROR");
+    }
+
+    #[test]
+    fn test_detect_chrome_path() {
+        // This test verifies the function runs without panic
+        // Actual detection depends on system Chrome installation
+        let result = detect_chrome_path();
+        // On CI without Chrome, this may be None - that's fine
+        if let Some(path) = result {
+            assert!(path.exists());
+        }
     }
 }

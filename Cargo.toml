@@ -1,11 +1,13 @@
 [package]
-name = "ref"
-version = "1.0.3"
+name = "royalbit-ref"
+version = "1.1.0"
 edition = "2021"
 authors = ["RoyalBit Inc. <admin@royalbit.ca>"]
 description = "Reference verification tools with headless Chrome"
-license-file = "LICENSE"
-publish = false
+license = "Elastic-2.0"
+repository = "https://github.com/royalbit/ref"
+keywords = ["cli", "web", "scraper", "headless", "chrome"]
+categories = ["command-line-utilities", "web-programming"]
 readme = "README.md"
 
 [[bin]]

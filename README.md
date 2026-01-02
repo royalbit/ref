@@ -1,5 +1,7 @@
 # RoyalBit Ref
 
+> 📌 **R&D Prototype** — Interpret claims as hypotheses, not proven facts.
+
 LLM-optimized reference toolkit.
 JSON output for AI agents, not humans.
 

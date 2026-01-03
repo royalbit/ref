@@ -10,42 +10,20 @@
 # See: docs/adr/ for detailed rationale
 
 current:
-  version: "1.0.0"
+  version: "1.1.0"
   status: complete
-  summary: "Full LLM reference toolkit"
-  goal: "V1_RELEASE"
+  summary: "Rebrand & Release Infrastructure"
+  goal: "REBRAND_RELEASE"
   deliverables:
-    - "[x] v0.6.0: verify-refs command with references.yaml schema"
-    - "[x] v0.6.0: Status detection (ok/dead/redirect/paywall/login)"
-    - "[x] v0.6.0: JSON Schema v1 (schemas/references.v1.schema.json)"
-    - "[x] v0.7.0: fetch - structured sections[], links[], code[] output"
-    - "[x] v0.7.0: Content cleaning (strip nav/footer/aside)"
-    - "[x] v0.7.0: --raw and --cookies flags"
-    - "[x] v0.7.1: check-links - compact JSON output"
-    - "[x] v0.7.1: refresh-data - compact JSON output"
-    - "[x] v0.8.0: deploy-kveldulf target (remote build)"
-    - "[x] v0.8.0: Simplified Makefile"
-    - "[x] v0.9.0: init - create references.yaml template"
-    - "[x] v0.9.0: scan - extract URLs from markdown files"
-    - "[x] v0.9.0: scan - dedupe, track cited_in per reference"
-    - "[x] v0.9.0: scan - infer categories from file paths"
-    - "[x] v1.0.0: pdf - extract text from PDF files"
-    - "[x] v1.0.0: pdf - output same JSON structure as fetch"
+    - "[x] Rebrand: ref-tools → ref (CLI) / RoyalBit Ref (product)"
+    - "[x] Cargo.toml: crates.io publishing metadata"
+    - "[x] GitHub Actions: CI workflow (test, lint, build)"
+    - "[x] GitHub Actions: Release workflow (multi-arch)"
+    - "[x] Targets: linux-x64, linux-arm64, macos-x64, macos-arm64, windows-x64"
+    - "[x] update command: self-update from GitHub releases"
+    - "[x] Update LICENSE, README, schemas for new branding"
 
 next:
-  - version: "1.1.0"
-    summary: "Rebrand & Release Infrastructure"
-    goal: "REBRAND_RELEASE"
-    priority: CRITICAL
-    deliverables:
-      - "[ ] Rebrand: ref-tools → ref (CLI) / RoyalBit Ref (product)"
-      - "[ ] Cargo.toml: crates.io publishing metadata"
-      - "[ ] GitHub Actions: CI workflow (test, lint, build)"
-      - "[ ] GitHub Actions: Release workflow (multi-arch)"
-      - "[ ] Targets: linux-x64, linux-arm64, macos-x64, macos-arm64, windows-x64"
-      - "[ ] update command: self-update from GitHub releases"
-      - "[ ] Update LICENSE, README, schemas for new branding"
-
   - version: "1.2.0"
     summary: "Enhanced extraction"
     goal: "BETTER_EXTRACTION"
